@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tire Lifespan Prediction</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6a5acd;
+            --primary-hover: #5541b4;
+            --background-color: #f0f4f8;
+            --card-background: linear-gradient(145deg, #ffffff, #e6e9f0);
+            --text-color: #1a202c;
+            --border-color: #a0aec0;
+            --accent-color: #38b2ac;
+            --error-color: #e53e3e;
+            --success-color: #48bb78;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 1rem;
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.8);
+            font-size: 1.2rem;
+        }
+
+        .card {
+            background: var(--card-background);
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1), 0 10px 20px rgba(0,0,0,0.08);
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background-color: rgba(255,255,255,0.7);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(106, 90, 205, 0.2);
+        }
+
+        .submit-btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .submit-btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 7px 14px rgba(50,50,93,0.1), 0 3px 6px rgba(0,0,0,0.08);
+        }
+
+        .submit-btn i {
+            margin-right: 0.5rem;
+        }
+
+        #result {
+            display: none;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 12px;
+            font-weight: 600;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .result-success {
+            background-color: rgba(72, 187, 120, 0.2);
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+
+        .result-error {
+            background-color: rgba(229, 62, 62, 0.2);
+            color: var(--error-color);
+            border: 1px solid var(--error-color);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .loading i {
+            color: var(--primary-color);
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                margin: 1rem;
+            }
+
+            .card {
+                padding: 1.5rem;
+            }
+
+            .header h1 {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Tire Lifespan Prediction</h1>
+            <p>Enter the required parameters below to predict tire lifespan in days</p>
+        </div>
+
+        <div class="card">
+            <form id="predictionForm">
+                {% for feature in features %}
+                <div class="form-group">
+                    <label for="{{ feature }}">{{ feature|replace('_', ' ')|title }}</label>
+                    <input type="number" step="any" id="{{ feature }}" name="{{ feature }}" required>
+                </div>
+                {% endfor %}
+                
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-calculator"></i>Calculate Prediction
+                </button>
+            </form>
+
+            <div class="loading">
+                <i class="fas fa-spinner"></i>
+            </div>
+
+            <div id="result"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('predictionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const loadingDiv = document.querySelector('.loading');
+            const resultDiv = document.getElementById('result');
+            const submitBtn = document.querySelector('.submit-btn');
+            
+            // Show loading, hide previous result
+            loadingDiv.style.display = 'block';
+            resultDiv.style.display = 'none';
+            submitBtn.disabled = true;
+            
+            fetch('/predict', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingDiv.style.display = 'none';
+                resultDiv.style.display = 'block';
+                submitBtn.disabled = false;
+                
+                if (data.error) {
+                    resultDiv.className = 'result-error';
+                    resultDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> Error: ${data.error}`;
+                } else {
+                    resultDiv.className = 'result-success';
+                    resultDiv.innerHTML = `<i class="fas fa-check-circle"></i> Predicted tire lifespan: ${Math.round(data.prediction)} days`;
+                }
+            })
+            .catch(error => {
+                loadingDiv.style.display = 'none';
+                resultDiv.style.display = 'block';
+                submitBtn.disabled = false;
+                
+                resultDiv.className = 'result-error';
+                resultDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> Error: ${error}`;
+            });
+        });
+    </script>
+</body>
+</html>
